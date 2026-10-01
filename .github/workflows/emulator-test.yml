@@ -1,0 +1,190 @@
+name: Z9 Tether Emulator + Simulated Z9 Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  emulator-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build Z9 Tether APK
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -o pipefail
+
+          echo "========================================"
+          echo "JAVA / GRADLE"
+          echo "========================================"
+
+          java -version
+          gradle --version
+
+          echo "========================================"
+          echo "BUILDING APK"
+          echo "========================================"
+
+          gradle assembleDebug --no-daemon --stacktrace --info 2>&1 | tee build.log
+
+          echo "========================================"
+          echo "VERIFYING APK"
+          echo "========================================"
+
+          test -f app/build/outputs/apk/debug/app-debug.apk
+
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Run Android emulator test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          disable-animations: true
+
+          script: |
+            echo "========================================"
+            echo "EMULATOR READY"
+            echo "========================================"
+
+            adb devices
+
+            echo "========================================"
+            echo "VERIFYING APK"
+            echo "========================================"
+
+            if [ ! -f app/build/outputs/apk/debug/app-debug.apk ]; then
+              echo "ERROR: APK not found"
+              exit 1
+            fi
+
+            ls -lh app/build/outputs/apk/debug/app-debug.apk
+
+            echo "========================================"
+            echo "CLEAN INSTALL"
+            echo "========================================"
+
+            adb uninstall com.z9tether.app || true
+
+            adb install app/build/outputs/apk/debug/app-debug.apk
+
+            echo "========================================"
+            echo "CLEARING LOGCAT"
+            echo "========================================"
+
+            adb logcat -c || true
+
+            echo "========================================"
+            echo "STARTING Z9 TETHER TEST MODE"
+            echo "========================================"
+
+            adb shell am start \
+              -n com.z9tether.app/.MainActivity \
+              --ez test_mode true
+
+            echo "========================================"
+            echo "WAITING FOR SIMULATED Z9 FTP TEST"
+            echo "========================================"
+
+            sleep 12
+
+            echo "========================================"
+            echo "COLLECTING LOGCAT"
+            echo "========================================"
+
+            adb logcat -d -v time > z9tether-logcat.txt || true
+
+            echo "========================================"
+            echo "RELEVANT APPLICATION LOGS"
+            echo "========================================"
+
+            grep -E \
+              "Z9Tether|AndroidRuntime|FATAL EXCEPTION|com.z9tether.app|Exception|ERROR" \
+              z9tether-logcat.txt || true
+
+            echo "========================================"
+            echo "READING TEST RESULT"
+            echo "========================================"
+
+            RESULT="$(adb shell run-as com.z9tether.app \
+              cat shared_prefs/test_results.xml 2>/dev/null || true)"
+
+            echo "$RESULT"
+
+            echo "========================================"
+            echo "APPLICATION FILES"
+            echo "========================================"
+
+            adb shell run-as com.z9tether.app ls -la || true
+            adb shell run-as com.z9tether.app ls -la shared_prefs || true
+
+            echo "========================================"
+            echo "FINAL TEST RESULT"
+            echo "========================================"
+
+            if printf '%s\n' "$RESULT" | \
+              grep -q '<string name="last_test">PASS</string>'; then
+
+              echo "========================================"
+              echo "SIMULATED Z9 FTP TEST PASSED"
+              echo "========================================"
+
+            else
+
+              echo "========================================"
+              echo "SIMULATED Z9 FTP TEST FAILED"
+              echo "========================================"
+
+              echo "FULL LOGCAT:"
+              cat z9tether-logcat.txt || true
+
+              echo "TEST RESULT:"
+              echo "$RESULT"
+
+              exit 1
+            fi
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: z9tether-build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Upload emulator logcat
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: z9tether-emulator-log
+          path: z9tether-logcat.txt
+          if-no-files-found: ignore
+
+      - name: Upload debug APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Z9Tether-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: ignore
