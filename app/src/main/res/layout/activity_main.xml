@@ -1,0 +1,15 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:background="#111318" android:fillViewport="true" android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:orientation="vertical" android:padding="24dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+<TextView android:text="Z9 TETHER" android:textStyle="bold" android:textSize="28sp" android:textColor="#F4F5F7" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/status" android:text="● OFFLINE" android:textStyle="bold" android:textSize="20sp" android:textColor="#9AA0AA" android:layout_marginTop="18dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/ip" android:text="Phone IP: detecting…" android:textColor="#F4F5F7" android:layout_marginTop="10dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/port" android:text="FTP CONTROL PORT: 2121" android:textColor="#9AA0AA" android:layout_marginTop="4dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<Button android:id="@+id/start" android:text="START RECEIVER" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<Button android:id="@+id/simulate" android:text="SIMULATE Z9 PHOTO UPLOAD" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/testResult" android:text="Test mode: ready" android:textColor="#9AA0AA" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<ImageView android:id="@+id/preview" android:adjustViewBounds="true" android:scaleType="centerInside" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="260dp"/>
+<TextView android:id="@+id/count" android:text="0 photos received" android:textColor="#F4F5F7" android:textSize="18sp" android:layout_marginTop="12dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/latest" android:text="Latest: none" android:textColor="#9AA0AA" android:layout_marginTop="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<Button android:id="@+id/refresh" android:text="REFRESH" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:text="TEST PLAN\n1. Start receiver\n2. Tap SIMULATE Z9 PHOTO UPLOAD\n3. The app creates a test JPEG, logs in to its own FTP server, uploads it, and displays the received photo.\n\nFor CI/cloud testing, use tools/simulated_z9.py against the emulator port." android:textColor="#9AA0AA" android:layout_marginTop="20dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+</LinearLayout></ScrollView>
